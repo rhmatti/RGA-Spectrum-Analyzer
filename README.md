@@ -43,7 +43,7 @@ User Instructions
 	d. To save these results, click anywhere within the results window and use the `<Ctrl+S>` command
   
 	e. The "Auto-Anayze" function searches for peak matches within a certain range of the expected mass (Δm)
-	and above a certain pressure threshold (P_min) which can be adjusted in the "Settings" (File>Settings)
+	and above a certain pressure threshold (P<sub>min</sub>) which can be adjusted in the "Settings" (File>Settings)
 
 5. Select a desired plot type from the "Plot" menu:
 
