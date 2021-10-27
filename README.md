@@ -59,7 +59,7 @@ User Instructions
     
 	d. Partial Pressure Change:
 	* Plots the partial pressure of a specific gas that the user selects from the submenu
-	* The gases available for selection include: Methane, H2O, Ne, N2, NO, O2, Ar, and CO2
+	* The gases available for selection include: Methane, H_2O, Ne, N_2, NO, O_2, Ar, and CO_2
 
 6. To save the graph on screen, use the save icon in the toolbar at the bottom of the screen,
 	select "Save" from the drop-down File menu (File>Save), or use the shortcut `<Ctrl+S>`
