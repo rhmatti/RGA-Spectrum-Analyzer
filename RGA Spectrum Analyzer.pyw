@@ -1,6 +1,6 @@
 #RGA Spectrum Analyzer
 #Author: Richard Mattish
-#Last Updated: 10/26/2021
+#Last Updated: 05/09/2024
 
 #Function:  This program provides a graphical user interface for importing
 #           and analyzing binary data files from the RGA to identify gases present in the
@@ -55,6 +55,10 @@ modes = []
 graphType = 0
 labels = []
 
+colors = [[0.368417,0.506779,0.709798],[0.880722,0.611041,0.142051],[0.560181,0.691569,0.194885],\
+          [0.922526,0.385626,0.209179],[0.528488,0.470624,0.701351],[0.772079,0.431554,0.102387],\
+            [0.363898,0.618501,0.782349],[1,0.75,0],[0.647624,0.37816,0.614037]]
+
 
 #Defines location of the Desktop as well as font and text size for use in the software
 desktop = os.path.expanduser("~\Desktop")
@@ -65,17 +69,23 @@ font4 = ('Helvetica', 12)
 textSize = 20
 graph = False
 
+#Variable used to store last-accessed folder for file imports
+work_dir = None
+
 #Loads the variables V and minPressure from the variables file, and creates the file if none exists
 try:
     f = open('variables', 'r')
     variables = f.readlines()
     error = float(variables[0].split('=')[1])
     minPressure = float(variables[1].split('=')[1])
+    work_dir = str(variables[2].split('=')[1])
 except:
     error = 0.2
     minPressure = 10**(-9)
+    work_dir = desktop
     f = open("variables",'w')
     f.write('deltam='+str(error)+'\n'+'minPressure='+str(minPressure))
+    f.write(f'work_dir={work_dir}')
     f.close()
 
 #Opens a url in a new tab in the default webbrowser
@@ -87,10 +97,10 @@ def callback(url):
 def About():
     name = "RGA Spectrum Analyzer"
     version = 'Version: 1.0.0'
-    date = 'Date: 10/27/2021'
+    date = 'Date: 05/09/2024'
     support = 'Support: '
     url = 'https://github.com/rhmatti/RGA-Spectrum-Analyzer'
-    copyrightMessage ='Copyright © 2021 Richard Mattish All Rights Reserved.'
+    copyrightMessage ='Copyright © 2024 Richard Mattish All Rights Reserved.'
     t = Toplevel(root)
     t.wm_title("About")
     t.geometry("400x300")
@@ -198,10 +208,11 @@ def updateSettings(E1, E2):
     global minPressure
     global graphType
     global calibrate
+    global work_dir
     error = E1
     minPressure = E2
     f = open("variables",'w')
-    f.write('error='+str(error)+'\n'+'minPressure='+str(minPressure))
+    f.write(f'error={error}\nminPressure={minPressure}\nwork_dir={work_dir}')
     f.close()
 
     if graphType == 0:
@@ -220,17 +231,29 @@ def updateSettings(E1, E2):
 def askopenfile():
     global filename
     global scanNum
-    newfile = filedialog.askopenfilename(initialdir = desktop,title = "Select file",filetypes = (("ANA files","*.ana*"),("ANA files","*.ana*")))
+    global work_dir
+    global error
+    global minPressure
+    try:
+        newfile = filedialog.askopenfilename(initialdir = work_dir,title = "Select file",filetypes = (("ANA files","*.ana*"),("ANA files","*.ana*")))
+    except:
+        newfile = filedialog.askopenfilename(initialdir = desktop,title = "Select file",filetypes = (("all files","*.*"),("all files","*.*")))
+
     if newfile == '':
         return
     filename = newfile
+    folders = newfile.split('/')
+    work_dir = ''
+    for i in range(0,len(folders)-1):
+        work_dir = f'{work_dir}{folders[i]}/'
+    updateSettings(error, minPressure)
     getData()
     plotData(0)
 
 #Lets user save a copy of the matplotlib graph displayed in the software
 def saveGraph():
     try:
-        saveFile = str(filedialog.asksaveasfile(initialdir = desktop,title = "Save file",filetypes = (("Portable Network Graphic","*.png"),("JPEG","*.jpeg")), defaultextension = (("Portable Network Graphic","*.png"),("JPEG","*.jpeg"))))
+        saveFile = str(filedialog.asksaveasfile(initialdir = work_dir,title = "Save file",filetypes = (("Portable Network Graphic","*.png"),("JPEG","*.jpeg")), defaultextension = (("Portable Network Graphic","*.png"),("JPEG","*.jpeg"))))
         print(saveFile)
         saveFile = saveFile.split("'")
         saveFile = saveFile[1]
@@ -479,8 +502,23 @@ def totalPressureChange():
         messageVar.config(bg='lightgreen')
         messageVar.place(relx = 0, rely = 1, anchor = SW)
 
+
 #Creates a plot of current vs. a given element's/gas's charge states for use in identifying if it is present in the ion beam
 def partialPressureChange(gas, mass, y_label):
+    global pressure_arr
+    global mass_arr
+    global ax
+
+    deltas = np.zeros(len(mass_arr))
+    for i in range(0,len(mass_arr)):
+        delta = abs(mass-mass_arr[i])
+        deltas[i] = delta
+    min_index = np.argmin(deltas)
+
+    ax.plot((time_arr-time_arr[0])/60, pressure_arr[min_index,:], linestyle = '-', linewidth = 2, label = y_label)
+
+#Creates a plot of current vs. a given element's/gas's charge states for use in identifying if it is present in the ion beam
+def partialPressurePlot(gas, mass, y_label):
     global canvas
     global fig
     global ax
@@ -533,6 +571,66 @@ def partialPressureChange(gas, mass, y_label):
        canvas.get_tk_widget().pack(side="top",fill='both',expand=True)
        
     except NameError:
+        helpMessage ='Please import a data file first.' 
+        messageVar = Message(root, text = helpMessage, font = font2, width = 600) 
+        messageVar.config(bg='lightgreen')
+        messageVar.place(relx = 0, rely = 1, anchor = SW)
+
+def allPartialPressurePlot():
+    global canvas
+    global fig
+    global ax
+    global toolbar
+    global filename
+    global graphType
+    global pressure_arr
+    global mass_arr
+
+    try:
+        title = filename.split('/')
+        canvas.get_tk_widget().destroy()
+        toolbar.destroy()
+        # creating the Matplotlib figure
+        plt.close('all')
+        fig, ax = plt.subplots(figsize = (16,9))
+        ax.tick_params(which='both', direction='in')
+        plt.rcParams.update({'font.size': textSize})
+        for label in (ax.get_xticklabels() + ax.get_yticklabels()):
+            label.set_fontsize(textSize)
+
+        #Graph partial pressure vs time of each gas
+        partialPressureChange('H2O', 18, 'H$_2$O')
+        partialPressureChange('Ne', 20, 'Ne')
+        #partialPressureChange('Ne22', 22, 'Ne$^{22}$')
+        #partialPressureChange('H', 1, 'H')
+        partialPressureChange('H2', 2, 'H$_2$')
+        partialPressureChange('N2', 28, 'N$_2$')
+        partialPressureChange('O2', 32, 'O$_2$')
+        partialPressureChange('CO2', 44, 'CO$_2$')
+        partialPressureChange('Ar', 40, 'Ar')
+        partialPressureChange('NO', 30, 'NO')
+
+        ax.set_xlim(0,np.max((time_arr-time_arr[0])/60))
+        plt.yscale('log')
+        plt.xlabel('Time (min)', fontsize=textSize)
+        plt.ylabel('Pressure (Torr)',fontsize=textSize)
+        plt.legend()
+        plt.title(title[len(title)-1])
+        
+
+        # creating the Tkinter canvas containing the Matplotlib figure
+        canvas = FigureCanvasTkAgg(fig, master = root)
+        canvas.draw()
+
+        # creating the toolbar and placing it
+        toolbar = NavigationToolbar2Tk(canvas, root, pack_toolbar=False)
+        toolbar.update()
+        toolbar.pack(side=BOTTOM, fill=X)
+
+        # placing the canvas on the Tkinter window
+        canvas.get_tk_widget().pack(side="top",fill='both',expand=True)
+    
+    except:
         helpMessage ='Please import a data file first.' 
         messageVar = Message(root, text = helpMessage, font = font2, width = 600) 
         messageVar.config(bg='lightgreen')
@@ -637,6 +735,7 @@ introMessage ='Import a data file to begin'
 introMessageVar = Message(root, text = introMessage, font = font2, width = 600)
 introMessageVar.config(bg='white', fg='grey')
 introMessageVar.place(relx = 0.5, rely = 0.5, anchor = CENTER)
+introMessageVar.bind('<Button-1>', lambda  eff: askopenfile())
 
 #Creates File menu
 filemenu = Menu(menu, tearoff=0)
@@ -655,14 +754,15 @@ plotmenu.add_command(label='Single RGA Scan', command= lambda: plotData(0))
 plotmenu.add_command(label='All RGA Scans', command= lambda: plotData(':'))
 plotmenu.add_command(label='Total Pressure Change', command= lambda: totalPressureChange())
 plotmenu.add_cascade(label='Partial Pressure Change', menu=ppmenu)
-ppmenu.add_command(label='Methane', command= lambda: partialPressureChange('Methane', 16, 'Methane'))
-ppmenu.add_command(label='H2O', command= lambda: partialPressureChange('H2O', 18, 'H$_2$O'))
-ppmenu.add_command(label='Ne', command= lambda: partialPressureChange('Ne', 20, 'Ne'))
-ppmenu.add_command(label='N2', command= lambda: partialPressureChange('N2', 28, 'N$_2$'))
-ppmenu.add_command(label='NO', command= lambda: partialPressureChange('NO', 30, 'NO'))
-ppmenu.add_command(label='O2', command= lambda: partialPressureChange('O2', 32, 'O$_2$'))
-ppmenu.add_command(label='Ar', command= lambda: partialPressureChange('Ar', 40, 'Ar'))
-ppmenu.add_command(label='CO2', command= lambda: partialPressureChange('CO2', 44, 'CO$_2$'))
+ppmenu.add_command(label='Methane', command= lambda: partialPressurePlot('Methane', 16, 'Methane'))
+ppmenu.add_command(label='H2O', command= lambda: partialPressurePlot('H2O', 18, 'H$_2$O'))
+ppmenu.add_command(label='Ne', command= lambda: partialPressurePlot('Ne', 20, 'Ne'))
+ppmenu.add_command(label='N2', command= lambda: partialPressurePlot('N2', 28, 'N$_2$'))
+ppmenu.add_command(label='NO', command= lambda: partialPressurePlot('NO', 30, 'NO'))
+ppmenu.add_command(label='O2', command= lambda: partialPressurePlot('O2', 32, 'O$_2$'))
+ppmenu.add_command(label='Ar', command= lambda: partialPressurePlot('Ar', 40, 'Ar'))
+ppmenu.add_command(label='CO2', command= lambda: partialPressurePlot('CO2', 44, 'CO$_2$'))
+ppmenu.add_command(label='Show All', command= lambda: allPartialPressurePlot())
 
 
 #Creates Analysis menu
