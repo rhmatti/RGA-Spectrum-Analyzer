@@ -219,12 +219,16 @@ def updateSettings(E1, E2):
         print('no graph needs changes')
     elif graphType == 1:
         totalPressureChange()
+    elif graphType == 2:
+        allPartialPressurePlot()
+    elif graphType == 3:
+        plotData(':')
     else:
         graphType = graphType.split(',')
         gas = graphType[0]
-        mass = graphType[1]
+        mass = float(graphType[1])
         y_label = graphType[2]
-        partialPressureChange(gas, mass, y_label)
+        partialPressurePlot(gas, mass, y_label)
         
     
 #Used to import an RGA data file into the software
@@ -234,6 +238,7 @@ def askopenfile():
     global work_dir
     global error
     global minPressure
+    global graphType
     try:
         newfile = filedialog.askopenfilename(initialdir = work_dir,title = "Select file",filetypes = (("ANA files","*.ana*"),("ANA files","*.ana*")))
     except:
@@ -248,7 +253,20 @@ def askopenfile():
         work_dir = f'{work_dir}{folders[i]}/'
     updateSettings(error, minPressure)
     getData()
-    plotData(0)
+    if graphType == 0:
+        plotData(0)
+    elif graphType == 1:
+        totalPressureChange()
+    elif graphType == 2:
+        allPartialPressurePlot()
+    elif graphType == 3:
+        plotData(':')
+    else:
+        graphType = graphType.split(',')
+        gas = graphType[0]
+        mass = float(graphType[1])
+        y_label = graphType[2]
+        partialPressurePlot(gas, mass, y_label)
 
 #Lets user save a copy of the matplotlib graph displayed in the software
 def saveGraph():
@@ -356,6 +374,12 @@ def plotData(i):
     global graph
     global filename
     global scanCount
+    global graphType
+
+    if i == ':':
+        graphType = 3
+    else:
+        graphType = 0
 
     try:
         canvas.get_tk_widget().destroy()
@@ -585,6 +609,8 @@ def allPartialPressurePlot():
     global graphType
     global pressure_arr
     global mass_arr
+
+    graphType = 2
 
     try:
         title = filename.split('/')
