@@ -1,6 +1,6 @@
 #RGA Spectrum Analyzer
 #Author: Richard Mattish
-#Last Updated: 05/10/2024
+#Last Updated: 05/13/2024
 
 #Function:  This program provides a graphical user interface for importing
 #           and analyzing binary data files from the RGA to identify gases present in the
@@ -90,8 +90,8 @@ class RSA:
     #Opens About Window with software information
     def About(self):
         name = "RGA Spectrum Analyzer"
-        version = 'Version: 2.0.0'
-        date = 'Date: 05/10/2024'
+        version = 'Version: 2.1.0'
+        date = 'Date: 05/13/2024'
         support = 'Support: '
         url = 'https://github.com/rhmatti/RGA-Spectrum-Analyzer'
         copyrightMessage ='Copyright © 2024 Richard Mattish All Rights Reserved.'
