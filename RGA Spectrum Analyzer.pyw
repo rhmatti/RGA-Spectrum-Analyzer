@@ -54,6 +54,7 @@ class RSA:
         self.canvas = None
         self.fig = None
         self.ax = None
+        self.line = None
         self.toolbar = None
         self.filename = None
         self.pressure_arr = None
@@ -542,6 +543,7 @@ class RSA:
 
     def allPartialPressurePlot(self):
         self.graphType = 2
+        self.line = None
 
         try:
             title = self.filename.split('/')
@@ -573,6 +575,13 @@ class RSA:
             plt.ylabel('Pressure (Torr)',fontsize=textSize)
             plt.legend()
             plt.title(title[len(title)-1])
+
+            #Adds anotation to plot (used as interactive text box showing temperatures as location clicked)
+            self.annot = self.ax.annotate('',xy=(0,0), fontsize=textSize-8, xytext=(20,20),textcoords='offset points',c='w',bbox=dict(boxstyle='round', fc='black'),arrowprops=dict(arrowstyle='->'))
+            self.annot.set_visible(False)
+
+            #Enalbes interactive left-click capability on plot
+            self.fig.canvas.mpl_connect('button_press_event', self.onclick)
             
 
             # creating the Tkinter self.canvas containing the Matplotlib figure
@@ -592,6 +601,54 @@ class RSA:
             messageVar = Message(self.root, text = helpMessage, font = font2, width = 600) 
             messageVar.config(bg='lightgreen')
             messageVar.place(relx = 0, rely = 1, anchor = SW)
+
+    #Enables left-click functionality on plot
+    #Left-clicking on plot will display the temperature of both stages
+    #as well as show a vertical line at the place clicked
+    def onclick(self, event):
+        global line
+
+        x_click = event.xdata
+        y_click = event.ydata
+        button = str(event.button)
+        print(button)
+
+        #if button=='MouseButton.LEFT':
+        if button=='1':
+            lines = self.ax.lines
+            labels = []
+            pressures = []
+            for line in lines:
+                label = line.get_label()
+                if '_child' not in label:
+                    xdata = line.get_xdata()
+                    ydata = line.get_ydata()
+                    #Finds Pressure of each gas at that time
+                    deltas = np.zeros(len(xdata))
+                    for i in range(0,len(xdata)):
+                        delta = abs(x_click-xdata[i])
+                        deltas[i] = delta
+                    index = np.argmin(deltas)
+                    labels.append(label)
+                    pressures.append(ydata[index])
+
+        
+        #Displays textbox and arrow showing partial pressures
+        annot_text = ''
+        for i in range(0,len(labels)):
+            annot_text = f'{annot_text}\n{labels[i]} = {pressures[i]:.2e} Torr'
+        self.annot.xy = (x_click,1.2*min(pressures))
+        self.annot.set_text(annot_text)
+        self.annot.get_bbox_patch().set_alpha(.7)
+        self.annot.set_visible(True)
+
+        #Places vertical line at x-coordinate
+        if self.line is None:
+            self.line = self.ax.axvline(x=x_click, color='black', ls='-', lw=1)
+        else:
+            self.line.set_xdata(x_click)
+            
+        self.fig.canvas.draw()
 
 
     #Analyzes spectrum and compares to all elements/molecules present in the json file
