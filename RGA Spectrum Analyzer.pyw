@@ -8,25 +8,16 @@
 
 
 #Imports necessary packages
-from logging import root
 import matplotlib
-from scipy.signal.waveforms import square
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
-from matplotlib import style
-from matplotlib.figure import Figure
 import numpy as np
 from tkinter import *
-from tkinter import ttk
 from scipy.signal import find_peaks
-from scipy.stats import mode
-import sys
 import os
 import platform
 import time
-import datetime
-from decimal import Decimal
 from tkinter import filedialog
 from PIL import ImageTk, Image
 import json
@@ -763,6 +754,7 @@ class RSA:
         plotmenu.add_command(label='All RGA Scans', command= lambda: self.plotData(':'))
         plotmenu.add_command(label='Total Pressure Change', command= lambda: self.totalPressureChange())
         plotmenu.add_cascade(label='Partial Pressure Change', menu=ppmenu)
+        ppmenu.add_command(label='H2', command= lambda: self.partialPressurePlot('H2', 2, 'H$_2$'))
         ppmenu.add_command(label='Methane', command= lambda: self.partialPressurePlot('Methane', 16, 'Methane'))
         ppmenu.add_command(label='H2O', command= lambda: self.partialPressurePlot('H2O', 18, 'H$_2$O'))
         ppmenu.add_command(label='Ne', command= lambda: self.partialPressurePlot('Ne', 20, 'Ne'))
