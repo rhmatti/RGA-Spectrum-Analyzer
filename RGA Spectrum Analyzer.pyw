@@ -90,8 +90,8 @@ class RSA:
     #Opens About Window with software information
     def About(self):
         name = "RGA Spectrum Analyzer"
-        version = 'Version: 2.1.1'
-        date = 'Date: 09/18/2025'
+        version = 'Version: 2.1.2'
+        date = 'Date: 09/19/2025'
         support = 'Support: '
         url = 'https://github.com/rhmatti/RGA-Spectrum-Analyzer'
         copyrightMessage ='Copyright © 2025 Richard Mattish All Rights Reserved.'
@@ -360,24 +360,30 @@ class RSA:
             for label in (self.ax.get_xticklabels() + self.ax.get_yticklabels()):
                     label.set_fontsize(textSize)
             if i == ':':
-                import matplotlib.cm as cm
+                from matplotlib import cm
                 import matplotlib.colors as mcolors
 
-                norm = mcolors.Normalize(vmin=0, vmax=len(self.pressure_arr[0])-1)
-                cmap = cm.get_cmap('plasma', len(self.pressure_arr[0])-1)
+                norm = mcolors.Normalize(vmin=0, vmax=(max(self.time_arr)-self.time_arr[0])/60)
+
+                cmap = cm.plasma  # Choose any matplotlib colormap
+                sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+                cbar = self.fig.colorbar(sm, ax=self.ax, pad=0.02)
+                cbar.set_label('Time (min)', fontsize=textSize)
+                cbar.set_ticks(np.arange(0, (self.time_arr[-1]-self.time_arr[0])/60, ((self.time_arr[-1]-self.time_arr[0])/60)/5))
 
                 for i in range(0,len(self.pressure_arr[0])-1):
-                    color = cmap(norm(i))
-                    plt.plot(self.mass_arr, self.pressure_arr[:,int(i)], color=color, linestyle='-', linewidth=2)
-                # plt.plot(self.mass_arr, self.pressure_arr, linestyle = '-', linewidth = 2)
+                    c = i*(self.time_arr[-1]-self.time_arr[0])/60/len(self.pressure_arr[0])
+                    color = cmap(norm(c))
+                    self.ax.plot(self.mass_arr, self.pressure_arr[:,int(i)], color=color, linestyle='-', linewidth=2)
+
             else:
-                plt.plot(self.mass_arr, self.pressure_arr[:,int(i)], linestyle = '-', linewidth = 2)
+                self.ax.plot(self.mass_arr, self.pressure_arr[:,int(i)], linestyle = '-', linewidth = 2)
                 self.scanCount = i
-            plt.yscale('log')
-            plt.xlim(0, self.param_arr[1] + 1/self.param_arr[2])
-            plt.ylim(1e-12, 2*np.max(self.pressure_arr))
-            plt.xlabel('Mass (amu)',fontsize=textSize)
-            plt.ylabel('Pressure (Torr)',fontsize=textSize)
+            self.ax.set_yscale('log')
+            self.ax.set_xlim(0, self.param_arr[1] + 1/self.param_arr[2])
+            self.ax.set_ylim(1e-12, 2*np.max(self.pressure_arr))
+            self.ax.set_xlabel('Mass (amu)',fontsize=textSize)
+            self.ax.set_ylabel('Presssure (Torr)',fontsize=textSize)
             plt.title(title[len(title)-1])
 
             # creating the Tkinter self.canvas
