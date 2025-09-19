@@ -90,11 +90,11 @@ class RSA:
     #Opens About Window with software information
     def About(self):
         name = "RGA Spectrum Analyzer"
-        version = 'Version: 2.1.0'
-        date = 'Date: 05/13/2024'
+        version = 'Version: 2.1.1'
+        date = 'Date: 09/18/2025'
         support = 'Support: '
         url = 'https://github.com/rhmatti/RGA-Spectrum-Analyzer'
-        copyrightMessage ='Copyright © 2024 Richard Mattish All Rights Reserved.'
+        copyrightMessage ='Copyright © 2025 Richard Mattish All Rights Reserved.'
         t = Toplevel(self.root)
         t.wm_title("About")
         t.geometry("400x300")
