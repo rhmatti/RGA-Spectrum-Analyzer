@@ -8,16 +8,25 @@
 
 
 #Imports necessary packages
+from logging import root
 import matplotlib
+from scipy.signal.waveforms import square
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib import style
+from matplotlib.figure import Figure
 import numpy as np
 from tkinter import *
+from tkinter import ttk
 from scipy.signal import find_peaks
+from scipy.stats import mode
+import sys
 import os
 import platform
 import time
+import datetime
+from decimal import Decimal
 from tkinter import filedialog
 from PIL import ImageTk, Image
 import json
@@ -351,13 +360,22 @@ class RSA:
             for label in (self.ax.get_xticklabels() + self.ax.get_yticklabels()):
                     label.set_fontsize(textSize)
             if i == ':':
-                plt.plot(self.mass_arr, self.pressure_arr, linestyle = '-', linewidth = 2)
+                import matplotlib.cm as cm
+                import matplotlib.colors as mcolors
+
+                norm = mcolors.Normalize(vmin=0, vmax=len(self.pressure_arr[0])-1)
+                cmap = cm.get_cmap('plasma', len(self.pressure_arr[0])-1)
+
+                for i in range(0,len(self.pressure_arr[0])-1):
+                    color = cmap(norm(i))
+                    plt.plot(self.mass_arr, self.pressure_arr[:,int(i)], color=color, linestyle='-', linewidth=2)
+                # plt.plot(self.mass_arr, self.pressure_arr, linestyle = '-', linewidth = 2)
             else:
                 plt.plot(self.mass_arr, self.pressure_arr[:,int(i)], linestyle = '-', linewidth = 2)
                 self.scanCount = i
             plt.yscale('log')
             plt.xlim(0, self.param_arr[1] + 1/self.param_arr[2])
-            plt.ylim(1e-10, 2*np.max(self.pressure_arr))
+            plt.ylim(1e-12, 2*np.max(self.pressure_arr))
             plt.xlabel('Mass (amu)',fontsize=textSize)
             plt.ylabel('Pressure (Torr)',fontsize=textSize)
             plt.title(title[len(title)-1])
@@ -755,7 +773,6 @@ class RSA:
         plotmenu.add_command(label='Total Pressure Change', command= lambda: self.totalPressureChange())
         plotmenu.add_cascade(label='Partial Pressure Change', menu=ppmenu)
         ppmenu.add_command(label='H2', command= lambda: self.partialPressurePlot('H2', 2, 'H$_2$'))
-        ppmenu.add_command(label='Methane', command= lambda: self.partialPressurePlot('Methane', 16, 'Methane'))
         ppmenu.add_command(label='H2O', command= lambda: self.partialPressurePlot('H2O', 18, 'H$_2$O'))
         ppmenu.add_command(label='Ne', command= lambda: self.partialPressurePlot('Ne', 20, 'Ne'))
         ppmenu.add_command(label='N2', command= lambda: self.partialPressurePlot('N2', 28, 'N$_2$'))

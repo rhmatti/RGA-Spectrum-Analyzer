@@ -338,6 +338,15 @@
                     "mass4": 0,
                     "mass5": 0,
                     "charge": 0
+                },
+                                {
+                    "name": "H2",
+                    "mass1": 2,
+                    "mass2": 0,
+                    "mass3": 0,
+                    "mass4": 0,
+                    "mass5": 0,
+                    "charge": 0
                 }
               ]
 }                                                          
